@@ -3,6 +3,74 @@
 ![Apache](https://img.shields.io/hexpm/l/plug.svg) 
 [![Build Status](https://travis-ci.org/Nextdoor/ndscheduler.svg)](https://travis-ci.org/Nextdoor/ndscheduler)
 
+## docker 的 python3 支持改造
+
+非常感谢 Nextdoor 提供的这个任务调度平台~
+
+新手教程已经很详细了，但我发现 Nextdoor 提供的 docker 镜像并不支持 python3，所以自己稍加改造，使用说明如下：
+
+### 运行容器
+
+首先构建一个名为 scheduler 的镜像
+
+```
+ docker build -t scheduler . 
+```
+
+由于新的任务并不方便添加到容器中，所以在外部创建一个脚本文件夹，并挂在到容器上。那么新的脚本就可以直接放在这个文件夹下面使用了。
+
+我的新文件夹地址是本地的 /docker_data/scheduler_jobs
+
+```
+sudo mkdir -p /docker_data/scheduler_jobs
+```
+
+然后，启动容器
+
+```
+docker run -itd --restart=always --name scheduler -p 3222:8888 -v /docker_data/scheduler_jobs:/app/simple_scheduler/jobs scheduler
+```
+
+参数说明：
+
+* -i：让容器的标准输入保持打开
+* -t：让 Docker 分配一个伪终端并绑定到容器的标准输入上
+* -d: 后台运行容器，并返回容器ID
+* --restart=always：当 Docker 重启时，容器会自动启动。
+* --name scheduler：将容器命名为scheduler
+* -p 3222:8888 ：映射容器服务的 8888 端口到宿主机的 3222 端口(也可以改成别的)，外部主机可以直接通过宿主机 IP:3222 访问到服务。
+* -v /docker_data/scheduler_jobs:/app/simple_scheduler/jobs: 挂载脚本目录
+
+大功告成，打开浏览器输入 localhost:3222 即可看到。
+
+### 添加任务
+
+首先将任务脚本文件放在 /docker_data/scheduler_jobs 下，格式如 simple_scheduler/jobs 下的样例，然后在网页上就可以正常管理任务了。
+
+如果任务文件要引入新的模块，如何在 docker 里 pip install 新的模块呢？
+
+首先进入容器
+
+```
+docker exec -it scheduler bash
+```
+
+然后安装模块
+
+```
+pip install xxxx
+```
+
+最后退出即可
+
+```
+exit
+```
+
+以下是原文。
+
+----
+
 ``ndscheduler`` is a flexible python library for building your own cron-like system to schedule jobs, which is to run a tornado process to serve REST APIs and a web ui.
 
 Check out our blog post - [We Don't Run Cron Jobs at Nextdoor](https://engblog.nextdoor.com/we-don-t-run-cron-jobs-at-nextdoor-6f7f9cc62040#.d2erw1pl6)
